@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  service1:
+    build: ./backend/service1
+    ports:
+      - "4000:4000"
+    depends_on:
+      - redis
+      - postgres
+
+  service2:
+    build: ./backend/service2
+    ports:
+      - "4001:4001"
+    depends_on:
+      - redis
+      - postgres
+
+  service3:
+    build: ./backend/service3
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgres
+
+  log-stream-service:
+    build: ./backend/log-stream-service
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - log-stream-service
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: logs_db
+    ports:
+      - "5432:5432"
