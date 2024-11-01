@@ -1,7 +1,8 @@
 // backend/service1/src/server.js (same for service2)
 import express from 'express';
 import Redis from 'ioredis';
-import { Pool } from 'pg';
+import pkg from 'pg'
+const {Pool} = pkg
 
 const app = express();
 const redis = new Redis(); // Connect to Redis
