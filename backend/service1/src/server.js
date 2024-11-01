@@ -1,11 +1,16 @@
-// backend/service1/src/server.js (same for service2)
 import express from 'express';
 import Redis from 'ioredis';
-import pkg from 'pg'
-const {Pool} = pkg
+import pkg from 'pg';
+const { Pool } = pkg;
 
 const app = express();
-const redis = new Redis(); // Connect to Redis
+
+// Connect to Redis using the service name defined in docker-compose.yml
+const redis = new Redis({
+  host: 'redis', // Docker Compose service name for Redis
+  port: 6379     // Redis default port
+});
+
 const pool = new Pool({ connectionString: 'postgres://user:password@postgres:5432/logs_db' });
 
 // Log data to Redis

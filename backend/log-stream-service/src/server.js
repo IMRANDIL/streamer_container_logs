@@ -1,7 +1,12 @@
 import Redis from 'ioredis';
 import { WebSocketServer } from 'ws';
 
-const redis = new Redis();
+// Specify the Redis host as 'redis', matching the service name in docker-compose.yml
+const redis = new Redis({
+  host: 'redis', // Docker service name for Redis
+  port: 6379     // Default Redis port
+});
+
 const wss = new WebSocketServer({ port: 5000 });
 
 wss.on('connection', (ws) => {
