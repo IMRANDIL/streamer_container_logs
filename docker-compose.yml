@@ -35,7 +35,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "80:4173"
     depends_on:
       - log-stream-service
 
