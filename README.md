@@ -1,14 +1,16 @@
+
 # Streamer Container Logs
 
-This project sets up a multi-service Docker environment for streaming and managing logs, including a frontend built with Vite and several backend services.
+This project sets up a multi-service Docker environment for streaming and managing logs, with a Vite-based frontend and multiple backend services. Logs are stored in PostgreSQL and cached in Redis.
 
 ## Project Structure
 
-- **frontend**: Vite-based frontend application.
-- **backend/service1, service2, service3**: Backend services communicating with Redis and PostgreSQL.
-- **backend/log-stream-service**: A log stream service responsible for processing and managing logs.
-- **redis**: Redis instance for caching.
-- **postgres**: PostgreSQL instance for database storage.
+- **frontend**: Vite-based frontend application for displaying logs.
+- **backend/service1, service2, service3**: Backend services that generate logs and communicate with Redis and PostgreSQL.
+- **backend/log-stream-service**: Service responsible for streaming logs in real-time.
+- **backend/worker**: Service that writes logs from Redis into PostgreSQL, with retry logic for database connectivity.
+- **redis**: Redis instance used for caching log data.
+- **postgres**: PostgreSQL database instance for persistent storage of logs.
 
 ## Prerequisites
 
@@ -22,7 +24,7 @@ This project sets up a multi-service Docker environment for streaming and managi
    cd streamer_container_logs
    ```
 
-2. Ensure all necessary files are in place for each service, including `Dockerfile` for each backend service and `frontend`.
+2. Ensure each service has its `Dockerfile` and required configuration files in place, especially in the `backend` and `frontend` directories.
 
 3. Build and run the Docker containers:
    ```bash
@@ -30,34 +32,34 @@ This project sets up a multi-service Docker environment for streaming and managi
    ```
 
    This command will:
-   - Build images for each service.
+   - Build Docker images for each service.
    - Start each service in a container.
    - Expose ports as defined in `docker-compose.yml`.
 
 ## Accessing the Application
 
-- **Frontend**: Access at [http://localhost:80](http://localhost:80).
+- **Frontend**: [http://localhost:80](http://localhost:80)
 - **Backend Services**: 
   - Service1: [http://localhost:4000](http://localhost:4000)
   - Service2: [http://localhost:4001](http://localhost:4001)
   - Service3: [http://localhost:8000](http://localhost:8000)
 - **Log Stream Service**: [http://localhost:5000](http://localhost:5000)
-- **Redis**: Port `6379`
-- **Postgres**: Port `5432`
+- **Redis**: Exposed on port `6379`
+- **Postgres**: Exposed on port `5432`
 
 ## Configuration
 
-Environment variables for services (e.g., `POSTGRES_USER`, `POSTGRES_PASSWORD`) can be adjusted in `docker-compose.yml`.
+You can modify environment variables, such as `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`, directly in the `docker-compose.yml` file.
 
 ### Frontend Configuration
 
-The frontend server is configured to expose on port `80`, mapping the internal port `4173` where Vite serves the app. The Dockerfile in the frontend directory includes `--host 0.0.0.0` to allow external access.
+The frontend is served on port `80`, mapped from Vite's default port `4173`. Ensure the `Dockerfile` includes `--host 0.0.0.0` for external access.
 
 ## Service Details
 
-- **Redis**: Serves as a cache layer to improve performance.
-- **Postgres**: Stores application data, with credentials configured in `docker-compose.yml`.
-- **Log Stream Service**: Manages and streams logs to be displayed in the frontend.
+- **Redis**: Provides a cache layer for logs.
+- **Postgres**: Stores application data persistently. Credentials can be modified in `docker-compose.yml`.
+- **Log Writer Service**: Uses retry logic to ensure a stable connection with PostgreSQL before writing logs. The service will attempt to connect five times with a delay between retries.
 
 ## Common Commands
 
@@ -78,7 +80,17 @@ The frontend server is configured to expose on port `80`, mapping the internal p
 
 ## Troubleshooting
 
-1. **Frontend Not Accessible**: If the frontend doesn’t load on port `80`, ensure the frontend container logs show `vite preview` running on `0.0.0.0:4173`.
-2. **Port Conflicts**: Make sure no other processes occupy the ports specified in `docker-compose.yml`.
-3. **Database Connection Issues**: Confirm the `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are correct in both `docker-compose.yml` and your backend configurations.
+1. **Frontend Not Accessible**: If the frontend doesn’t load on port `80`, check that `vite preview` is set to run on `0.0.0.0:4173`.
+2. **Port Conflicts**: Ensure no other applications are using the ports specified in `docker-compose.yml`.
+3. **Database Connection Issues**: If `log-writer` exits with a connection error, ensure `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are consistent in both `docker-compose.yml` and backend configurations. The log-writer includes retry logic for PostgreSQL connections.
 
+4. **Log Writer Retry Logic**: The `log-writer` service will retry connecting to PostgreSQL five times, pausing between each attempt. If the retries fail, check that the PostgreSQL container is up and running, and confirm network settings are correct.
+
+## Additional Notes
+
+This setup supports real-time log processing and storage using Redis for caching and PostgreSQL for persistence. Logs are published from the `log-writer` service for real-time streaming and analytics.
+```
+
+### Key Updates
+- **Log Writer Service**: Mentioned retry logic and its purpose.
+- **Troubleshooting**: Added a note about retry logic to help diagnose database connectivity issues.
