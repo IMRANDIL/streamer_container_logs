@@ -5,6 +5,8 @@ import os
 import json
 from contextlib import asynccontextmanager
 
+DATABASE_URL = "postgresql://user:password@postgres:5432/logs_db"
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.db = await asyncpg.connect(DATABASE_URL)
@@ -13,10 +15,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 redis = aioredis.from_url("redis://redis:6379")
-DATABASE_URL = "postgresql://user:password@postgres:5432/logs_db"
 
 async def publish_log(event: str):
-    await redis.publish("logs", json.dumps({"service": "service3", "event": event, "timestamp": "now"}))
+    log_entry = json.dumps({"service": "service3", "event": event, "timestamp": "now"})
+    await redis.rpush("logQueue", log_entry) # Push log to Redis list for batch processing
 
 @app.get("/")
 async def root():

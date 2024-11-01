@@ -32,6 +32,14 @@ services:
     depends_on:
       - redis
 
+  log-writer:
+    build:
+      context: ./backend/worker
+      dockerfile: Dockerfile
+    depends_on:
+      - redis
+      - postgres
+
   frontend:
     build: ./frontend
     ports:
