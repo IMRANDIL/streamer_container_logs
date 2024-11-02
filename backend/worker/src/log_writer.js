@@ -1,9 +1,16 @@
-import Redis from 'ioredis';
+import { Kafka } from 'kafkajs';
 import pkg from 'pg';
 const { Pool } = pkg;
 
-const redis = new Redis({ host: 'redis', port: 6379 });
 const pool = new Pool({ connectionString: 'postgres://user:password@postgres:5432/logs_db' });
+
+// Kafka configuration
+const kafka = new Kafka({
+  clientId: 'log-writer',
+  brokers: ['kafka:9092'], // Replace with your Kafka broker(s)
+});
+
+const consumer = kafka.consumer({ groupId: 'log-writer-group' });
 
 // Retry logic for connecting to PostgreSQL
 async function connectWithRetry() {
@@ -40,32 +47,35 @@ async function createLogsTableIfNotExists() {
   await pool.query(createTableQuery);
 }
 
-async function writeLogsToPostgres() {
-  await connectWithRetry();          // Ensure database connection
-  await createLogsTableIfNotExists(); // Ensure the table exists
+// Function to write logs to PostgreSQL
+async function writeLogToPostgres(log) {
+  const { service, event, timestamp } = JSON.parse(log);
 
-  while (true) {
-    const logs = await redis.lrange('logQueue', 0, -1); // Fetch all logs in Redis
-    if (logs.length > 0) {
-      await pool.query('BEGIN');
-      try {
-        for (const log of logs) {
-          const { service, event, timestamp } = JSON.parse(log);
-          await pool.query(
-            'INSERT INTO logs (service, event, timestamp) VALUES ($1, $2, $3)',
-            [service, event, timestamp]
-          );
-          await redis.publish('logs', log); // Publish to Redis for real-time streaming
-        }
-        await pool.query('COMMIT');
-        await redis.ltrim('logQueue', logs.length, -1); // Trim processed logs
-      } catch (error) {
-        await pool.query('ROLLBACK');
-        console.error('Failed to insert logs:', error);
-      }
-    }
-    await new Promise((resolve) => setTimeout(resolve, 5000)); // Adjust interval as needed
+  try {
+    await pool.query(
+      'INSERT INTO logs (service, event, timestamp) VALUES ($1, $2, $3)',
+      [service, event, timestamp]
+    );
+    console.log(`Log inserted: ${log}`);
+  } catch (error) {
+    console.error('Failed to insert log:', error);
   }
 }
 
-writeLogsToPostgres();
+async function startKafkaConsumer() {
+  await consumer.connect();
+  await consumer.subscribe({ topic: 'logTopic', fromBeginning: true }); // Subscribe to Kafka topic
+
+  await consumer.run({
+    eachMessage: async ({ topic, partition, message }) => {
+      const log = message.value.toString();
+      await writeLogToPostgres(log); // Process and write log to PostgreSQL
+    },
+  });
+}
+
+(async () => {
+  await connectWithRetry();          // Ensure database connection
+  await createLogsTableIfNotExists(); // Ensure the table exists
+  await startKafkaConsumer();         // Start consuming logs from Kafka
+})();

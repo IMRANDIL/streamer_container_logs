@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "ioredis": "^5.4.1",
+    "kafkajs": "^2.2.4",
     "pg": "^8.13.1"
   }
 }

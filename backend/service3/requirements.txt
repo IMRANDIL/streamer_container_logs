@@ -2,3 +2,5 @@ fastapi
 uvicorn
 aioredis
 asyncpg
+aiokafka
+asyncio

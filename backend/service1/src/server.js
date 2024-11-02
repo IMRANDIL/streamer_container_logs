@@ -1,28 +1,38 @@
 import express from 'express';
-import Redis from 'ioredis';
+import { Kafka } from 'kafkajs';
 import pkg from 'pg';
 const { Pool } = pkg;
 
 const app = express();
-const redis = new Redis({
-  host: 'redis', 
-  port: 6379     
-});
-
 const pool = new Pool({ connectionString: 'postgres://user:password@postgres:5432/logs_db' });
 
-// Log data to Redis as a list entry for batch processing
+// Set up Kafka producer
+const kafka = new Kafka({
+  clientId: 'service1-producer', // Change to 'service2-producer' for service2
+  brokers: ['kafka:9092'],
+});
+const producer = kafka.producer();
+
 async function publishLog(event) {
-  const logEntry = JSON.stringify({ service: 'service1', event, timestamp: new Date() });
-  await redis.rpush('logQueue', logEntry); // Push log to Redis list for batch processing
+  const logEntry = JSON.stringify({
+    service: 'service1', // Change to 'service2' for service2
+    event,
+    timestamp: new Date(),
+  });
+
+  await producer.connect();
+  await producer.send({
+    topic: 'logTopic',
+    messages: [{ value: logEntry }],
+  });
 }
 
 app.get('/', async (req, res) => {
   const result = await pool.query('SELECT NOW()');
   await publishLog('Root endpoint accessed');
-  res.json({ message: 'Service 1', dbTime: result.rows[0] });
+  res.json({ message: 'Service 1', dbTime: result.rows[0] }); // Update to 'Service 2' for service2
 });
 
 app.listen(4000, () => {
-  console.log('Service 1 running on port 4000');
+  console.log('Service 1 running on port 4000'); // Update port for service2 to 4001
 });
