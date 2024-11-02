@@ -1,30 +1,68 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
+import debounce from 'lodash.debounce';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
 
 const LogStream: React.FC = () => {
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [filteredLogs, setFilteredLogs] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    // Initialize the Socket.IO connection
-    const socket = io('http://localhost:5000'); // Connect to the Socket.IO server
+    const socket = io('http://localhost:5000');
 
-    // Listen for 'log' events from the server
     socket.on('log', (log) => {
-      setLogs((prevLogs) => [...prevLogs, JSON.stringify(log)]); // Add new log to the state
+      setLogs((prevLogs) => {
+        const updatedLogs = [...prevLogs, log];
+        setFilteredLogs(updatedLogs);
+        return updatedLogs;
+      });
     });
 
-    // Cleanup on component unmount
     return () => {
-      socket.disconnect(); // Disconnect the Socket.IO client
+      socket.disconnect();
     };
-  }, []); // Empty dependency array to ensure this runs only once
+  }, []);
+
+  const handleSearch = useCallback(
+    debounce((date: Date | null) => {
+      if (date) {
+        const dateString = date.toISOString().split('T')[0];
+        const filtered = logs.filter((log) => log.timestamp.startsWith(dateString));
+        setFilteredLogs(filtered);
+      } else {
+        setFilteredLogs(logs);
+      }
+    }, 300),
+    [logs]
+  );
+
+  useEffect(() => {
+    handleSearch(selectedDate);
+  }, [selectedDate, handleSearch]);
 
   return (
     <div className="container">
       <h2 className="title">Real-Time Logs</h2>
+      <div className="search-container">
+        <label htmlFor="date-picker" className="date-label">Filter by Date:</label>
+        <DatePicker
+          selected={selectedDate}
+          onChange={(date: Date | null) => setSelectedDate(date)}
+          placeholderText="Select a date"
+          dateFormat="yyyy-MM-dd"
+          id="date-picker"
+          isClearable
+          className="date-picker"
+        />
+      </div>
       <ul className="log-list">
-        {logs.map((log, index) => (
-          <li key={index} className="log-item">{log}</li>
+        {filteredLogs.map((log, index) => (
+          <li key={index} className="log-item">
+            {JSON.stringify(log)}
+          </li>
         ))}
       </ul>
     </div>
