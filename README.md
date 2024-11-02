@@ -23,8 +23,7 @@ This project sets up a multi-service Docker environment for streaming and managi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/streamer_container_logs.git
-   cd streamer_container_logs
+   git clone https://github.com/IMRANDIL/streamer_container_logs.git
    ```
 
 2. Ensure each service has its `Dockerfile` and required configuration files in place, especially in the `backend` and `frontend` directories.
