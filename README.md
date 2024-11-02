@@ -3,6 +3,9 @@
 
 This project sets up a multi-service Docker environment for streaming and managing logs, with a Vite-based frontend and multiple backend services. Logs are stored in PostgreSQL and cached in Redis.
 
+
+![Screenshot 2024-11-02 055401](https://github.com/user-attachments/assets/606b4e60-f3d3-49ff-bae4-a67f5397e82b)
+
 ## Project Structure
 
 - **frontend**: Vite-based frontend application for displaying logs.
