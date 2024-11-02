@@ -4,7 +4,6 @@ import debounce from 'lodash.debounce';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-
 const LogStream: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<any[]>([]);
@@ -29,8 +28,22 @@ const LogStream: React.FC = () => {
   const handleSearch = useCallback(
     debounce((date: Date | null) => {
       if (date) {
-        const dateString = date.toISOString().split('T')[0];
-        const filtered = logs.filter((log) => log.timestamp.startsWith(dateString));
+        // Adjust to local date without the time offset
+        const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  
+        const startOfDay = new Date(localDate);
+        startOfDay.setHours(0, 0, 0, 0);
+  
+        const endOfDay = new Date(localDate);
+        endOfDay.setHours(23, 59, 59, 999);
+  
+        //console.log('Filtering logs from', startOfDay.toISOString(), 'to', endOfDay.toISOString());
+  
+        const filtered = logs.filter((log) => {
+          const logDate = new Date(log.timestamp);
+          return logDate >= startOfDay && logDate <= endOfDay;
+        });
+  
         setFilteredLogs(filtered);
       } else {
         setFilteredLogs(logs);
@@ -38,6 +51,8 @@ const LogStream: React.FC = () => {
     }, 300),
     [logs]
   );
+  
+  
 
   useEffect(() => {
     handleSearch(selectedDate);
