@@ -3,6 +3,9 @@
 
 This project sets up a multi-service Docker environment for streaming and managing logs, with a Vite-based frontend and multiple backend services. Logs are stored in PostgreSQL and cached in Redis.
 
+
+![Screenshot 2024-11-02 055401](https://github.com/user-attachments/assets/606b4e60-f3d3-49ff-bae4-a67f5397e82b)
+
 ## Project Structure
 
 - **frontend**: Vite-based frontend application for displaying logs.
@@ -20,8 +23,7 @@ This project sets up a multi-service Docker environment for streaming and managi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/streamer_container_logs.git
-   cd streamer_container_logs
+   git clone https://github.com/IMRANDIL/streamer_container_logs.git
    ```
 
 2. Ensure each service has its `Dockerfile` and required configuration files in place, especially in the `backend` and `frontend` directories.
